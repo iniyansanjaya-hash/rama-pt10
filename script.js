@@ -1,138 +1,111 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iPhone 15 AU Simulator - Real-Time</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+// Konfigurasi Kunci Keamanan
+const CORRECT_PASSCODE = "1010";
+let currentInput = "";
 
-    <!-- Frame Utama iPhone 15 -->
-    <div class="phone-frame">
+// 1. Fungsi Jam Real-Time Otomatis
+function updateClock() {
+    const now = new Date();
+    
+    // Format Jam Menit (Contoh: 15:42)
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const formattedTime = `${hours}:${minutes}`;
 
-<!-- 📌 TARUH DI SINI (Tepat di bawah phone-frame) -->
-    <div class="top-bar">
-        <span class="time-status" id="top-time">00:00</span>
-        <div class="status-icons">📶 4G 🔋 <span id="battery-level">100</span>%</div>
-    </div>
+    // Update Jam di Lock Screen & Home Screen
+    document.getElementById('lock-time').textContent = formattedTime;
+    document.getElementById('home-time').textContent = formattedTime;
 
-        <!-- Dynamic Island -->
-        <div class="dynamic-island" id="dynamic-island"></div>
-        
-        <!-- ================= FASE 1: LOCK SCREEN ================= -->
-        <div class="screen active" id="lock-screen">
-            <div class="lock-header">
-                <div class="lock-date font-ios-date" id="lock-date">Memuat tanggal...</div>
-                <div class="lock-time font-ios-time" id="lock-time">00:00</div>
-            </div>
+// 📌 TAMBAHKAN BARIS INI (Agar jam di bar atas ikut berputar otomatis)
+if (document.getElementById('top-time')) {
+    document.getElementById('top-time').textContent = formattedTime;
+}
 
-            <!-- Area Notifikasi Lock Screen -->
-            <div class="notif-container">
-                <!-- Notif WhatsApp dari Yan -->
-                <div class="notif-box wa-notif">
-                    <div class="app-icon wa-icon">💬</div>
-                    <div class="notif-info">
-                        <div class="notif-top-row">
-                            <span class="sender-name">Yan</span>
-                            <span class="time-stamp">sekarang</span>
-                        </div>
-                        <div class="message-body">aku udah sampe, kamu dimana?</div>
-                    </div>
-                </div>
+    // Format Tanggal Indonesia (Contoh: Kamis, 22 Oktober)
+    const opsiHari = { weekday: 'long' };
+    const opsiTanggal = { day: 'numeric', month: 'long' };
+    const namaHari = now.toLocaleDateString('id-ID', opsiHari);
+    const namaTanggal = now.toLocaleDateString('id-ID', opsiTanggal);
+    
+    document.getElementById('lock-date').textContent = `${namaHari}, ${namaTanggal}`;
+    document.getElementById('home-date').textContent = `${namaHari}, ${namaTanggal}`;
+}
 
-                <!-- Notif Music Player -->
-                <div class="music-player">
-                    <div class="music-info">
-                        <div class="music-cover">🎵</div>
-                        <div>
-                            <div class="music-title">Hari Yang Baik Untuk Berbohong</div>
-                            <div class="music-artist">Hindia</div>
-                        </div>
-                    </div>
-                    <div class="music-controls">
-                        <span>⏮️</span> <span>◀️</span> <span>⏭️</span>
-                    </div>
-                </div>
-            </div>
+// Jalankan pencatatan waktu setiap 1 detik
+setInterval(updateClock, 1000);
+updateClock();
 
-            <!-- Bagian Bawah Lock Screen -->
-            <div class="lock-footer" id="swipe-trigger">
-                <div class="action-text">Klik atau Geser ke atas untuk membuka</div>
-                <div class="home-bar"></div>
-            </div>
-        </div>
+// 2. Transisi Menuju Layar Kode Akses (PIN)
+document.getElementById('swipe-trigger').addEventListener('click', () => {
+    document.getElementById('lock-screen').classList.remove('active');
+    document.getElementById('passcode-screen').classList.add('active');
+});
 
-        <!-- ================= FASE 2: PASSCODE SCREEN ================= -->
-        <div class="screen" id="passcode-screen">
-            <div class="passcode-header">
-                <p>Masukkan Sandi</p>
-                <div class="dots-container" id="dots-container">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
-            </div>
+// 3. Sistem Numpad PIN Kunci
+function pressKey(num) {
+    if (currentInput.length >= 4) return;
+    
+    currentInput += num;
+    updateDots();
 
-            <!-- Numpad Keyboard -->
-            <div class="numpad">
-                <button class="num-btn" onclick="pressKey('1')">1</button>
-                <button class="num-btn" onclick="pressKey('2')">2</button>
-                <button class="num-btn" onclick="pressKey('3')">3</button>
-                <button class="num-btn" onclick="pressKey('4')">4</button>
-                <button class="num-btn" onclick="pressKey('5')">5</button>
-                <button class="num-btn" onclick="pressKey('6')">6</button>
-                <button class="num-btn" onclick="pressKey('7')">7</button>
-                <button class="num-btn" onclick="pressKey('8')">8</button>
-                <button class="num-btn" onclick="pressKey('9')">9</button>
-                <div></div>
-                <button class="num-btn" onclick="pressKey('0')">0</button>
-                <button class="txt-btn" onclick="clearKey()">Hapus</button>
-            </div>
-        </div>
+    if (currentInput.length === 4) {
+        setTimeout(() => {
+            if (currentInput === CORRECT_PASSCODE) {
+                // Password Benar -> Buka Home Screen
+                document.getElementById('passcode-screen').classList.remove('active');
+                document.getElementById('home-screen').classList.add('active');
+                
+                // Animasi Dynamic Island membesar sekilas
+                const island = document.getElementById('dynamic-island');
+                island.style.width = "140px";
+                setTimeout(() => island.style.width = "110px", 400);
+            } else {
+                // Password Salah -> Efek Guncang Layar
+                const screen = document.getElementById('passcode-screen');
+                screen.classList.add('shake');
+                currentInput = "";
+                updateDots();
+                setTimeout(() => screen.classList.remove('shake'), 300);
+            }
+        }, 200);
+    }
+}
 
-        <!-- ================= FASE 3: HOME SCREEN ================= -->
-        <div class="screen" id="home-screen">
-            <div class="home-widgets">
-                <!-- Widget Jam Digital & Tanggal Real-Time -->
-                <div class="widget-box widget-clock">
-                    <div class="home-time" id="home-time">00:00</div>
-                    <div class="home-date" id="home-date">Memuat...</div>
-                </div>
+function clearKey() {
+    currentInput = currentInput.slice(0, -1);
+    updateDots();
+}
 
-                <!-- Widget Notes Belanjaan -->
-                <div class="widget-box widget-notes">
-                    <div class="notes-title">📝 schedule today</div>
-                    <ul class="notes-list">
-                        <li>membeli mango pudding cake</li>
-                        <li>membeli bouquet</li>
-                        <li>Yan birthday 10 oct, aku lupa...</li>
-                    </ul>
-                </div>
-            </div>
+function updateDots() {
+    const dots = document.querySelectorAll('.dot');
+    dots.forEach((dot, index) => {
+        if (index < currentInput.length) {
+            dot.classList.add('filled');
+        } else {
+            dot.classList.remove('filled');
+        }
+    });
+  }
 
-            <!-- Grid Aplikasi iPhone 15 -->
-            <div class="apps-grid">
-                <div class="app-item"><div class="app-shape bg-safari">🌐</div><span>Safari</span></div>
-                <div class="app-item"><div class="app-shape bg-photos">🖼️</div><span>Foto</span></div>
-                <div class="app-item"><div class="app-shape bg-wa">💬</div><span>WhatsApp</span></div>
-                <div class="app-item"><div class="app-shape bg-notes">🗒️</div><span>Catatan</span></div>
-                <div class="app-item"><div class="app-shape bg-music">🎵</div><span>Musik</span></div>
-                <div class="app-item"><div class="app-shape bg-settings">⚙️</div><span>Pengaturan</span></div>
-            </div>
+// 📌 FUNGSI BATERAI REAL-TIME OTOMATIS
+if ('getBattery' in navigator) {
+    navigator.getBattery().then(function(battery) {
+        // 1. Fungsi untuk memperbarui angka teks baterai
+        function updateBatteryStatus() {
+            const level = Math.floor(battery.level * 100);
+            const batteryElem = document.getElementById('battery-level');
+            
+            if (batteryElem) {
+                batteryElem.textContent = level;
+            }
+        }
 
-            <!-- Dock Aplikasi Bawah -->
-            <div class="phone-dock">
-                <div class="app-shape bg-phone">📞</div>
-                <div class="app-shape bg-safari">🌐</div>
-                <div class="app-shape bg-messages">💬</div>
-                <div class="app-shape bg-music">🎵</div>
-            </div>
-        </div>
+        // Jalankan fungsi saat pertama kali simulator dimuat
+        updateBatteryStatus();
 
-    </div>
-
-    <script src="script.js"></script>
-</body>
-  </html>
+        // 2. Pasang pendengar otomatis jika daya baterai berubah di latar belakang
+        battery.addEventListener('levelchange', updateBatteryStatus);
+    });
+} else {
+    // Cadangan jika browser laptop/HP jadul tidak mendukung Battery API
+    console.log("Battery Status API tidak didukung di browser ini.");
+}
